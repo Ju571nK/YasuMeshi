@@ -1,10 +1,14 @@
 import type { Restaurant } from '@/lib/types';
+import { trackCardTap, trackNavigateClick } from '@/lib/analytics';
 
 export function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
-  const { name, priceRange, walkMinutes, isOpen, address, mapsUrl } = restaurant;
+  const { name, priceRange, walkMinutes, isOpen, address, mapsUrl, placeId } = restaurant;
 
   return (
-    <div className="border border-gray-200 rounded-lg p-4 flex flex-col gap-2">
+    <div
+      className="border border-gray-200 rounded-lg p-4 flex flex-col gap-2"
+      onClick={() => trackCardTap({ placeId, priceStart: priceRange?.start ?? null, walkMinutes })}
+    >
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-base truncate">{name}</h3>
@@ -37,6 +41,7 @@ export function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
         href={mapsUrl}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => trackNavigateClick(placeId)}
         className="mt-1 inline-flex items-center justify-center gap-1 bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
       >
         地図で見る →

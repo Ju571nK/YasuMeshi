@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Noto_Sans_JP } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 
 const notoSansJP = Noto_Sans_JP({
@@ -22,6 +23,7 @@ export default function RootLayout({
     <html lang="ja" className={`${notoSansJP.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-[family-name:var(--font-noto-sans-jp)]">
         {children}
+        <Analytics />
       </body>
     </html>
   );

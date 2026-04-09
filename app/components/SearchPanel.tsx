@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { RestaurantCard } from './RestaurantCard';
-import type { Restaurant, SearchResponse } from '@/lib/types';
+import type { SearchResponse } from '@/lib/types';
 import { DEFAULT_LOCATION } from '@/lib/types';
+import { trackSearch, trackFilterChange, trackLocationDenied } from '@/lib/analytics';
 
 type Radius = 500 | 800 | 1000;
 type PlaceType = 'restaurant' | 'cafe';
@@ -40,6 +41,7 @@ function useGeolocation() {
         setLocation({ ...DEFAULT_LOCATION, isDefault: true });
         setError('位置情報の取得ができませんでした。東京駅周辺の結果を表示します。');
         setLoading(false);
+        trackLocationDenied();
       },
       { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 }
     );
@@ -87,6 +89,14 @@ export function SearchPanel() {
 
       const data: SearchResponse = await res.json();
       setResults(data);
+      trackSearch({
+        lat: location.lat,
+        lng: location.lng,
+        radius,
+        type,
+        resultCount: data.meta.total,
+        priceCount: data.meta.withPrice,
+      });
     } catch {
       setSearchError('ネットワークエラーが発生しました。');
     } finally {
@@ -118,7 +128,7 @@ export function SearchPanel() {
           {([500, 800, 1000] as const).map((r) => (
             <button
               key={r}
-              onClick={() => setRadius(r)}
+              onClick={() => { setRadius(r); trackFilterChange('radius', r); }}
               className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
                 radius === r
                   ? 'bg-gray-900 text-white border-gray-900'
@@ -133,7 +143,7 @@ export function SearchPanel() {
         {/* Type */}
         <div className="flex gap-1">
           <button
-            onClick={() => setType('restaurant')}
+            onClick={() => { setType('restaurant'); trackFilterChange('type', 'restaurant'); }}
             className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
               type === 'restaurant'
                 ? 'bg-gray-900 text-white border-gray-900'
@@ -143,7 +153,7 @@ export function SearchPanel() {
             🍜 食事
           </button>
           <button
-            onClick={() => setType('cafe')}
+            onClick={() => { setType('cafe'); trackFilterChange('type', 'cafe'); }}
             className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
               type === 'cafe'
                 ? 'bg-gray-900 text-white border-gray-900'
@@ -156,7 +166,7 @@ export function SearchPanel() {
 
         {/* Open now */}
         <button
-          onClick={() => setOpenNow(!openNow)}
+          onClick={() => { setOpenNow(!openNow); trackFilterChange('openNow', !openNow); }}
           className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
             openNow
               ? 'bg-green-600 text-white border-green-600'
