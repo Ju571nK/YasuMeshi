@@ -82,7 +82,15 @@ function ReportInline({
 
   if (done) {
     return (
-      <p className="text-sm text-green-600 py-2">✅ ありがとうございます！確認後に反映されます。</p>
+      <div className="text-center py-3">
+        <p className="text-sm text-green-700 font-medium mb-1">✅ ありがとうございます！</p>
+        <p className="text-xs text-gray-500">
+          内容を確認後、みんなの情報に反映されます。
+        </p>
+        <p className="text-xs text-gray-400 mt-1">
+          やすめしは、みんなの力で安くておいしいお店を共有するサービスです。
+        </p>
+      </div>
     );
   }
 
@@ -135,7 +143,7 @@ function ReportInline({
   );
 }
 
-function ReportDetails({ placeId }: { placeId: string }) {
+function ReportDetails({ placeId, onReport }: { placeId: string; onReport: () => void }) {
   const [reports, setReports] = useState<Report[] | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -153,7 +161,18 @@ function ReportDetails({ placeId }: { placeId: string }) {
 
   if (loading) return <p className="text-xs text-gray-400 py-2">読み込み中...</p>;
   if (!reports || reports.length === 0) {
-    return <p className="text-xs text-gray-400 py-2">まだ制報がありません。</p>;
+    return (
+      <div className="text-center py-4">
+        <p className="text-sm text-gray-500 mb-2">まだ情報がありません。</p>
+        <p className="text-xs text-gray-400 mb-3">あなたの情報が、安くておいしいお店を探しているみんなの助けになります。</p>
+        <button
+          onClick={(e) => { e.stopPropagation(); onReport(); }}
+          className="px-4 py-2 text-sm font-medium text-orange-600 border border-orange-300 rounded-lg hover:bg-orange-50 transition-colors"
+        >
+          🍜 情報を教える
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -270,7 +289,7 @@ export function RestaurantCard({
         <ReportInline restaurant={restaurant} userLat={userLat} userLng={userLng} />
       )}
       {showDetails && (
-        <ReportDetails placeId={placeId} />
+        <ReportDetails placeId={placeId} onReport={() => { setShowReport(true); setShowDetails(false); }} />
       )}
     </div>
   );
