@@ -90,8 +90,9 @@ export function ReportForm({ userLat, userLng, onClose }: ReportFormProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          placeId: selectedPlace.placeId,
+          googlePlaceId: selectedPlace.placeId,
           placeName: selectedPlace.name,
+          placeAddress: selectedPlace.address,
           menuName: menuName.trim(),
           price: priceNum,
           tags: selectedTags,

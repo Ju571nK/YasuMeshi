@@ -6,8 +6,9 @@ const MAX_DISTANCE_KM = 2;
 const VALID_TAGS = ['トイレ', 'カード可', '持ち帰り', 'カウンター', 'グループ'] as const;
 
 interface ReportBody {
-  placeId?: string;
+  googlePlaceId?: string;
   placeName?: string;
+  placeAddress?: string;
   menuName?: string;
   price?: number;
   tags?: string[];
@@ -15,6 +16,44 @@ interface ReportBody {
   lng?: number;
   placeLat?: number;
   placeLng?: number;
+}
+
+async function findOrCreatePlace(
+  googlePlaceId: string,
+  name: string,
+  address: string,
+  lat: number,
+  lng: number
+): Promise<string | null> {
+  // Try to find existing place by google_place_id
+  const { data: existing } = await supabase
+    .from('places')
+    .select('id')
+    .eq('google_place_id', googlePlaceId)
+    .single();
+
+  if (existing) return existing.id;
+
+  // Create new place
+  const { data: created, error } = await supabase
+    .from('places')
+    .insert({
+      google_place_id: googlePlaceId,
+      name,
+      address,
+      lat,
+      lng,
+      source: 'google',
+    })
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error('Place insert error:', error);
+    return null;
+  }
+
+  return created.id;
 }
 
 export async function POST(request: Request) {
@@ -25,12 +64,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { placeId, placeName, menuName, price, tags, lat, lng, placeLat, placeLng } = body;
+  const { googlePlaceId, placeName, placeAddress, menuName, price, tags, lat, lng, placeLat, placeLng } = body;
 
   // Validation
-  if (!placeId || !placeName || !menuName || price == null || lat == null || lng == null) {
+  if (!googlePlaceId || !placeName || !menuName || price == null || lat == null || lng == null) {
     return NextResponse.json(
-      { error: 'placeId, placeName, menuName, price, lat, lng are required' },
+      { error: 'googlePlaceId, placeName, menuName, price, lat, lng are required' },
       { status: 400 }
     );
   }
@@ -59,10 +98,22 @@ export async function POST(request: Request) {
     }
   }
 
-  // Save to Supabase
+  // Find or create place
+  const internalPlaceId = await findOrCreatePlace(
+    googlePlaceId,
+    placeName,
+    placeAddress ?? '',
+    placeLat ?? lat,
+    placeLng ?? lng
+  );
+
+  if (!internalPlaceId) {
+    return NextResponse.json({ error: 'Failed to register place' }, { status: 500 });
+  }
+
+  // Save report
   const { error } = await supabase.from('reports').insert({
-    place_id: placeId,
-    place_name: placeName,
+    place_id: internalPlaceId,
     menu_name: menuName,
     price,
     tags: validatedTags,
