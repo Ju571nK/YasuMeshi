@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { RestaurantCard } from './RestaurantCard';
+import { ReportForm } from './ReportForm';
 import type { SearchResponse } from '@/lib/types';
 import { DEFAULT_LOCATION } from '@/lib/types';
 import { trackSearch, trackFilterChange, trackLocationDenied, trackPwaLaunch } from '@/lib/analytics';
@@ -127,6 +128,7 @@ export function SearchPanel() {
   const [results, setResults] = useState<SearchResponse | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
+  const [showReport, setShowReport] = useState(false);
 
   useEffect(() => { trackPwaLaunch(); }, []);
 
@@ -296,6 +298,26 @@ export function SearchPanel() {
             </details>
           )}
         </>
+      )}
+
+      {/* Report section */}
+      {location && !locationLoading && (
+        <div className="mt-6">
+          {showReport ? (
+            <ReportForm
+              userLat={location.lat}
+              userLng={location.lng}
+              onClose={() => setShowReport(false)}
+            />
+          ) : (
+            <button
+              onClick={() => setShowReport(true)}
+              className="w-full py-3 text-sm font-medium text-orange-600 border border-orange-300 rounded-lg hover:bg-orange-50 transition-colors"
+            >
+              🍜 食堂を教える
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
