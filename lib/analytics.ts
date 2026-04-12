@@ -59,3 +59,12 @@ export function trackLocationDenied() {
   if (!a) return;
   logEvent(a, 'location_denied');
 }
+
+export function trackPwaLaunch() {
+  const isPwa = window.matchMedia('(display-mode: standalone)').matches
+    || ('standalone' in navigator && (navigator as { standalone?: boolean }).standalone === true);
+  if (!isPwa) return;
+  const a = getFirebaseAnalytics();
+  if (!a) return;
+  logEvent(a, 'pwa_launch');
+}

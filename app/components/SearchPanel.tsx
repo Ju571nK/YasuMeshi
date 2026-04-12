@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { RestaurantCard } from './RestaurantCard';
 import type { SearchResponse } from '@/lib/types';
 import { DEFAULT_LOCATION } from '@/lib/types';
-import { trackSearch, trackFilterChange, trackLocationDenied } from '@/lib/analytics';
+import { trackSearch, trackFilterChange, trackLocationDenied, trackPwaLaunch } from '@/lib/analytics';
 
 type Radius = 500 | 800 | 1000;
 type PlaceType = 'restaurant' | 'cafe';
@@ -127,6 +127,8 @@ export function SearchPanel() {
   const [results, setResults] = useState<SearchResponse | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
+
+  useEffect(() => { trackPwaLaunch(); }, []);
 
   const search = useCallback(async () => {
     if (!location) return;
