@@ -102,11 +102,13 @@ describe('POST /api/search', () => {
           {
             displayName: { text: 'A' },
             priceRange: { startPrice: { currencyCode: 'JPY', units: '500' } },
+            currentOpeningHours: { openNow: true },
             location: { latitude: 35.69, longitude: 139.70 },
             id: 'a',
           },
           {
             displayName: { text: 'B' },
+            currentOpeningHours: { openNow: true },
             location: { latitude: 35.69, longitude: 139.70 },
             id: 'b',
           },

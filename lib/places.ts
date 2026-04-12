@@ -101,6 +101,7 @@ export async function searchNearby(
 
   for (const place of places) {
     const parsed = parsePlace(place, params.lat, params.lng);
+    if (params.openNow && !parsed.isOpen) continue;
     if (parsed.priceRange) {
       restaurants.push(parsed);
     } else {

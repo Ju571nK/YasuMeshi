@@ -35,7 +35,7 @@ const mockPlacesResponse = {
     },
     {
       displayName: { text: '名前不明の店' },
-      currentOpeningHours: { openNow: false },
+      currentOpeningHours: { openNow: true },
       formattedAddress: '東京都新宿区',
       location: { latitude: 35.6910, longitude: 139.7020 },
       id: 'place-3',
@@ -123,6 +123,66 @@ describe('searchNearby', () => {
     await expect(searchNearby(mockParams, 'bad-key')).rejects.toThrow(
       'Google Places API error: 401 Unauthorized'
     );
+  });
+
+  it('filters out closed restaurants when openNow is true', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        places: [
+          {
+            displayName: { text: '営業中の店' },
+            priceRange: { startPrice: { currencyCode: 'JPY', units: '500' }, endPrice: { currencyCode: 'JPY', units: '1000' } },
+            currentOpeningHours: { openNow: true },
+            formattedAddress: '東京都新宿区',
+            location: { latitude: 35.6900, longitude: 139.7010 },
+            id: 'open-1',
+          },
+          {
+            displayName: { text: '閉店中の店' },
+            priceRange: { startPrice: { currencyCode: 'JPY', units: '300' }, endPrice: { currencyCode: 'JPY', units: '600' } },
+            currentOpeningHours: { openNow: false },
+            formattedAddress: '東京都新宿区',
+            location: { latitude: 35.6905, longitude: 139.7015 },
+            id: 'closed-1',
+          },
+        ],
+      }),
+    });
+
+    const result = await searchNearby(mockParams, 'test-key');
+    expect(result.restaurants).toHaveLength(1);
+    expect(result.restaurants[0].name).toBe('営業中の店');
+  });
+
+  it('includes closed restaurants when openNow is false', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        places: [
+          {
+            displayName: { text: '営業中の店' },
+            priceRange: { startPrice: { currencyCode: 'JPY', units: '500' }, endPrice: { currencyCode: 'JPY', units: '1000' } },
+            currentOpeningHours: { openNow: true },
+            formattedAddress: '東京都新宿区',
+            location: { latitude: 35.6900, longitude: 139.7010 },
+            id: 'open-1',
+          },
+          {
+            displayName: { text: '閉店中の店' },
+            priceRange: { startPrice: { currencyCode: 'JPY', units: '300' }, endPrice: { currencyCode: 'JPY', units: '600' } },
+            currentOpeningHours: { openNow: false },
+            formattedAddress: '東京都新宿区',
+            location: { latitude: 35.6905, longitude: 139.7015 },
+            id: 'closed-1',
+          },
+        ],
+      }),
+    });
+
+    const paramsAllShow = { ...mockParams, openNow: false };
+    const result = await searchNearby(paramsAllShow, 'test-key');
+    expect(result.restaurants).toHaveLength(2);
   });
 
   it('calculates walk minutes for each restaurant', async () => {
