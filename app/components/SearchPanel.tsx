@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { RestaurantCard } from './RestaurantCard';
 import type { SearchResponse } from '@/lib/types';
 import { DEFAULT_LOCATION } from '@/lib/types';
-import { trackSearch, trackFilterChange, trackLocationDenied, trackPwaLaunch } from '@/lib/analytics';
+import { trackSearch, trackFilterChange, trackLocationDenied, trackPwaLaunch, trackResultsShown, trackSessionStart, trackStationSearch } from '@/lib/analytics';
 
 type Radius = 500 | 800 | 1000;
 type PlaceType = 'restaurant' | 'cafe';
@@ -72,6 +72,7 @@ function StationSearch({ onFound }: { onFound: (lat: number, lng: number, name: 
       });
 
       if (res.status === 404) {
+        trackStationSearch(query.trim(), false);
         setError('駅が見つかりませんでした。別の駅名をお試しください。');
         return;
       }
@@ -82,6 +83,7 @@ function StationSearch({ onFound }: { onFound: (lat: number, lng: number, name: 
       }
 
       const data = await res.json();
+      trackStationSearch(query.trim(), true);
       onFound(data.lat, data.lng, data.name);
     } catch {
       setError('ネットワークエラーが発生しました。');
@@ -128,7 +130,7 @@ export function SearchPanel() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
 
-  useEffect(() => { trackPwaLaunch(); }, []);
+  useEffect(() => { trackPwaLaunch(); trackSessionStart(); }, []);
 
   const search = useCallback(async () => {
     if (!location) return;
@@ -168,6 +170,8 @@ export function SearchPanel() {
         resultCount: data.meta.total,
         priceCount: data.meta.withPrice,
       });
+      const allPlaceIds = [...data.restaurants, ...data.unknownPrice].map((r) => r.placeId);
+      trackResultsShown(allPlaceIds, radius, type);
     } catch {
       setSearchError('ネットワークエラーが発生しました。');
     } finally {

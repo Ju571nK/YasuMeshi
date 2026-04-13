@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { Restaurant } from '@/lib/types';
-import { trackCardTap, trackNavigateClick } from '@/lib/analytics';
+import { trackCardTap, trackNavigateClick, trackReportFormOpened, trackReportSubmitted, trackDetailsOpened } from '@/lib/analytics';
 
 interface Report {
   menu_name: string;
@@ -72,6 +72,12 @@ function ReportInline({
         setError('送信に失敗しました。');
         return;
       }
+      trackReportSubmitted({
+        placeId: restaurant.placeId,
+        placeName: restaurant.name,
+        menuName: menuName.trim(),
+        price: priceNum,
+      });
       setDone(true);
     } catch {
       setError('ネットワークエラーが発生しました。');
@@ -263,7 +269,7 @@ export function RestaurantCard({
       {/* Action buttons */}
       <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
         <button
-          onClick={() => { setShowReport(!showReport); setShowDetails(false); }}
+          onClick={() => { if (!showReport) trackReportFormOpened(placeId, name); setShowReport(!showReport); setShowDetails(false); }}
           className={`flex-1 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
             showReport
               ? 'bg-orange-500 text-white border-orange-500'
@@ -273,7 +279,7 @@ export function RestaurantCard({
           🍜 教える
         </button>
         <button
-          onClick={() => { setShowDetails(!showDetails); setShowReport(false); }}
+          onClick={() => { if (!showDetails) trackDetailsOpened(placeId, name); setShowDetails(!showDetails); setShowReport(false); }}
           className={`flex-1 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
             showDetails
               ? 'bg-gray-900 text-white border-gray-900'
