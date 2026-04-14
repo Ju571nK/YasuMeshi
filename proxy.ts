@@ -14,7 +14,19 @@ function getClientIp(request: NextRequest): string {
   );
 }
 
+const AI_BOT_PATTERNS = [
+  'GPTBot', 'ChatGPT-User', 'Google-Extended', 'CCBot', 'anthropic-ai',
+  'Claude-Web', 'Bytespider', 'Amazonbot', 'FacebookBot', 'meta-externalagent',
+  'PerplexityBot', 'Applebot-Extended', 'cohere-ai', 'Diffbot',
+];
+
 export function proxy(request: NextRequest) {
+  // Block AI bots
+  const ua = request.headers.get('user-agent') ?? '';
+  if (AI_BOT_PATTERNS.some((bot) => ua.includes(bot))) {
+    return new NextResponse('Blocked', { status: 403 });
+  }
+
   // Geo-restriction: Japan only
   const country = request.headers.get('x-vercel-ip-country');
   if (country && country !== 'JP') {
