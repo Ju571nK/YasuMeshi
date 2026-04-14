@@ -15,6 +15,21 @@ function getClientIp(request: NextRequest): string {
 }
 
 export function proxy(request: NextRequest) {
+  // Geo-restriction: Japan only
+  const country = request.headers.get('x-vercel-ip-country');
+  if (country && country !== 'JP') {
+    if (request.nextUrl.pathname.startsWith('/api')) {
+      return NextResponse.json(
+        { error: 'This service is only available in Japan' },
+        { status: 403 }
+      );
+    }
+    return new NextResponse(
+      '<html><body style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;color:#666"><div style="text-align:center"><h1>やすめし</h1><p>このサービスは日本国内でのみご利用いただけます。</p><p style="font-size:14px;color:#999">This service is only available in Japan.</p></div></div></body></html>',
+      { status: 403, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    );
+  }
+
   if (!request.nextUrl.pathname.startsWith('/api')) {
     return NextResponse.next();
   }
@@ -45,5 +60,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const proxyConfig = {
-  matcher: '/api/:path*',
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon-192.png|icon-512.png).*)'],
 };
