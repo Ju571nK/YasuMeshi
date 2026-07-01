@@ -72,7 +72,7 @@ function StationSearch({ onFound }: { onFound: (lat: number, lng: number, name: 
       });
 
       if (res.status === 404) {
-        trackStationSearch(query.trim(), false);
+        trackStationSearch(null, false);
         setError('駅が見つかりませんでした。別の駅名をお試しください。');
         return;
       }
@@ -83,7 +83,7 @@ function StationSearch({ onFound }: { onFound: (lat: number, lng: number, name: 
       }
 
       const data = await res.json();
-      trackStationSearch(query.trim(), true);
+      trackStationSearch(data.name, true);
       onFound(data.lat, data.lng, data.name);
     } catch {
       setError('ネットワークエラーが発生しました。');

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Restaurant } from '@/lib/types';
 import { trackCardTap, trackNavigateClick, trackReportFormOpened, trackReportSubmitted, trackDetailsOpened } from '@/lib/analytics';
 
@@ -74,8 +74,6 @@ function ReportInline({
       }
       trackReportSubmitted({
         placeId: restaurant.placeId,
-        placeName: restaurant.name,
-        menuName: menuName.trim(),
         price: priceNum,
       });
       setDone(true);
@@ -153,17 +151,20 @@ function ReportDetails({ placeId, onReport }: { placeId: string; onReport: () =>
   const [reports, setReports] = useState<Report[] | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useState(() => {
+  useEffect(() => {
+    const controller = new AbortController();
     fetch('/api/reports', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ googlePlaceId: placeId }),
+      signal: controller.signal,
     })
       .then((res) => res.json())
       .then((data) => setReports(data.reports ?? []))
-      .catch(() => setReports([]))
+      .catch((err) => { if (err.name !== 'AbortError') setReports([]); })
       .finally(() => setLoading(false));
-  });
+    return () => controller.abort();
+  }, [placeId]);
 
   if (loading) return <p className="text-xs text-gray-400 py-2">読み込み中...</p>;
   if (!reports || reports.length === 0) {
@@ -184,7 +185,7 @@ function ReportDetails({ placeId, onReport }: { placeId: string; onReport: () =>
   return (
     <div className="flex flex-col gap-2 pt-2">
       {reports.map((r, i) => (
-        <div key={i} className="bg-orange-50 rounded-lg p-2.5">
+        <div key={`${r.created_at}-${r.menu_name}`} className="bg-orange-50 rounded-lg p-2.5">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">{r.menu_name}</span>
             <span className="text-sm font-semibold text-orange-600">¥{r.price.toLocaleString()}</span>

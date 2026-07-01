@@ -64,8 +64,10 @@ export function trackLocationDenied() {
 export function trackResultsShown(placeIds: string[], radius: number, type: string) {
   const a = getFirebaseAnalytics();
   if (!a) return;
+  const truncated = placeIds.length > 20;
   logEvent(a, 'results_shown', {
-    place_ids: placeIds.slice(0, 20).join(','),
+    place_ids_sample: placeIds.slice(0, 20).join(','),
+    place_ids_truncated: truncated,
     count: placeIds.length,
     radius,
     type,
@@ -82,16 +84,12 @@ export function trackReportFormOpened(placeId: string, placeName: string) {
 // User submitted a report
 export function trackReportSubmitted(params: {
   placeId: string;
-  placeName: string;
-  menuName: string;
   price: number;
 }) {
   const a = getFirebaseAnalytics();
   if (!a) return;
   logEvent(a, 'report_submitted', {
     place_id: params.placeId,
-    place_name: params.placeName,
-    menu_name: params.menuName,
     price: params.price,
   });
 }
@@ -104,20 +102,25 @@ export function trackDetailsOpened(placeId: string, placeName: string) {
 }
 
 // User used station search
-export function trackStationSearch(query: string, found: boolean) {
+export function trackStationSearch(resolvedName: string | null, found: boolean) {
   const a = getFirebaseAnalytics();
   if (!a) return;
-  logEvent(a, 'station_search', { query, found: String(found) });
+  logEvent(a, 'station_search', {
+    station_name: found ? resolvedName : null,
+    found: String(found),
+  });
 }
 
 // Session start with context
 export function trackSessionStart() {
   const a = getFirebaseAnalytics();
   if (!a) return;
+  const now = new Date();
+  const dayOfWeek = now.getDay();
   logEvent(a, 'session_start_context', {
-    hour: new Date().getHours(),
-    day_of_week: new Date().getDay(),
-    is_weekend: [0, 6].includes(new Date().getDay()) ? 'true' : 'false',
+    hour: now.getHours(),
+    day_of_week: dayOfWeek,
+    is_weekend: [0, 6].includes(dayOfWeek),
   });
 }
 

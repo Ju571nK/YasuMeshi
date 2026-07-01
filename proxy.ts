@@ -23,13 +23,15 @@ const AI_BOT_PATTERNS = [
 export function proxy(request: NextRequest) {
   // Block AI bots
   const ua = request.headers.get('user-agent') ?? '';
-  if (AI_BOT_PATTERNS.some((bot) => ua.includes(bot))) {
+  const uaLower = ua.toLowerCase();
+  if (AI_BOT_PATTERNS.some((bot) => uaLower.includes(bot.toLowerCase()))) {
     return new NextResponse('Blocked', { status: 403 });
   }
 
   // Geo-restriction: Japan only
   const country = request.headers.get('x-vercel-ip-country');
-  if (country && country !== 'JP') {
+  const isDev = process.env.NODE_ENV === 'development';
+  if (!isDev && (!country || country !== 'JP')) {
     if (request.nextUrl.pathname.startsWith('/api')) {
       return NextResponse.json(
         { error: 'This service is only available in Japan' },
@@ -37,7 +39,7 @@ export function proxy(request: NextRequest) {
       );
     }
     return new NextResponse(
-      '<html><body style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;color:#666"><div style="text-align:center"><h1>やすめし</h1><p>このサービスは日本国内でのみご利用いただけます。</p><p style="font-size:14px;color:#999">This service is only available in Japan.</p></div></div></body></html>',
+      '<html><body style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;color:#666"><div style="text-align:center"><h1>やすめし</h1><p>このサービスは日本国内でのみご利用いただけます。</p><p style="font-size:14px;color:#999">This service is only available in Japan.</p></div></body></html>',
       { status: 403, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
     );
   }
@@ -72,5 +74,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const proxyConfig = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon-192.png|icon-512.png).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon-192.png|icon-512.png|robots.txt|sitemap.xml|manifest.webmanifest).*)'],
 };
