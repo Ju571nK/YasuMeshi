@@ -123,4 +123,54 @@ describe('POST /api/search', () => {
     expect(data.meta.withPrice).toBe(1);
     expect(data.meta.coverage).toBe(0.5);
   });
+
+  it('merges hotpepper price and sets hotpepperOk', async () => {
+    process.env.HOTPEPPER_API_KEY = 'hp-key';
+    (global.fetch as jest.Mock).mockImplementation((input: unknown) => {
+      const u = String(input);
+      if (u.includes('googleapis')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ places: [
+            { displayName: { text: '牛丼太郎' }, currentOpeningHours: { openNow: true }, location: { latitude: 35.69, longitude: 139.70 }, id: 'u1' },
+          ] }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ results: { shop: [
+          { name: '牛丼 太郎', lat: '35.69001', lng: '139.70001', budget: { code: 'B010' }, address: 'x', urls: { pc: 'http://hp' } },
+        ] } }),
+      });
+    });
+
+    const res = await POST(makeRequest({ lat: 35.6896, lng: 139.7006 }));
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data.meta.hotpepperOk).toBe(true);
+    expect(data.restaurants).toHaveLength(1);
+    expect(data.restaurants[0].priceSource).toBe('hotpepper');
+  });
+
+  it('falls back to google-only when hotpepper fails', async () => {
+    process.env.HOTPEPPER_API_KEY = 'hp-key';
+    (global.fetch as jest.Mock).mockImplementation((input: unknown) => {
+      const u = String(input);
+      if (u.includes('googleapis')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ places: [
+            { displayName: { text: 'A' }, priceRange: { startPrice: { currencyCode: 'JPY', units: '500' } }, currentOpeningHours: { openNow: true }, location: { latitude: 35.69, longitude: 139.70 }, id: 'a' },
+          ] }),
+        });
+      }
+      return Promise.resolve({ ok: false, status: 500 });
+    });
+
+    const res = await POST(makeRequest({ lat: 35.6896, lng: 139.7006 }));
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data.meta.hotpepperOk).toBe(false);
+    expect(data.restaurants).toHaveLength(1);
+  });
 });

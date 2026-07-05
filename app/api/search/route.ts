@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { searchNearby } from '@/lib/places';
+import { searchHotPepper } from '@/lib/hotpepper';
+import { mergeResults } from '@/lib/merge';
 import { VALID_RADII, VALID_TYPES, DEFAULT_RADIUS, DEFAULT_TYPE } from '@/lib/types';
 import type { SearchParams, SearchResponse } from '@/lib/types';
 
@@ -60,26 +62,58 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { restaurants, unknownPrice, total } = await searchNearby(params, apiKey);
-    const withPrice = restaurants.length;
+    const googleKey = apiKey;
+    const hpKey = process.env.HOTPEPPER_API_KEY;
 
+    const [googleRes, hpRes] = await Promise.allSettled([
+      searchNearby(params, googleKey),
+      hpKey
+        ? searchHotPepper(params, hpKey, { timeoutMs: 2000 })
+        : Promise.reject(new Error('HotPepper key not configured')),
+    ]);
+
+    if (googleRes.status === 'rejected') {
+      const message = googleRes.reason instanceof Error ? googleRes.reason.message : 'Unknown error';
+      if (message.includes('Google Places API error')) {
+        return NextResponse.json({ error: message }, { status: 502 });
+      }
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+
+    const google = googleRes.value;
+    const hotpepper = hpRes.status === 'fulfilled' ? hpRes.value : null;
+    const hotpepperOk = hpRes.status === 'fulfilled';
+
+    let merged: { restaurants: typeof google.restaurants; unknownPrice: typeof google.unknownPrice; total: number };
+    try {
+      merged = mergeResults(
+        { restaurants: google.restaurants, unknownPrice: google.unknownPrice },
+        hotpepper,
+        params.lat,
+        params.lng
+      );
+    } catch {
+      merged = {
+        restaurants: google.restaurants,
+        unknownPrice: google.unknownPrice,
+        total: google.restaurants.length + google.unknownPrice.length,
+      };
+    }
+
+    const withPrice = merged.restaurants.length;
     const response: SearchResponse = {
-      restaurants,
-      unknownPrice,
+      restaurants: merged.restaurants,
+      unknownPrice: merged.unknownPrice,
       meta: {
-        total,
+        total: merged.total,
         withPrice,
-        coverage: total > 0 ? Math.round((withPrice / total) * 100) / 100 : 0,
-        hotpepperOk: false,
+        coverage: merged.total > 0 ? Math.round((withPrice / merged.total) * 100) / 100 : 0,
+        hotpepperOk,
       },
     };
 
     return NextResponse.json(response);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    if (message.includes('Google Places API error')) {
-      return NextResponse.json({ error: message }, { status: 502 });
-    }
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
