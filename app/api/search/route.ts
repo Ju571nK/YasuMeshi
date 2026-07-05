@@ -70,6 +70,7 @@ export async function POST(request: Request) {
         total,
         withPrice,
         coverage: total > 0 ? Math.round((withPrice / total) * 100) / 100 : 0,
+        hotpepperOk: false,
       },
     };
 

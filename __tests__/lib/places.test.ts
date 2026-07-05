@@ -199,3 +199,33 @@ describe('searchNearby', () => {
     }
   });
 });
+
+describe('parsePlace via searchNearby — priceSource & coords', () => {
+  it('tags google price source and carries coordinates', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        places: [
+          {
+            displayName: { text: 'Priced' },
+            priceRange: { startPrice: { currencyCode: 'JPY', units: '500' }, endPrice: { currencyCode: 'JPY', units: '900' } },
+            currentOpeningHours: { openNow: true },
+            location: { latitude: 35.69, longitude: 139.70 },
+            id: 'p1',
+          },
+          {
+            displayName: { text: 'Unknown' },
+            currentOpeningHours: { openNow: true },
+            location: { latitude: 35.6901, longitude: 139.7001 },
+            id: 'u1',
+          },
+        ],
+      }),
+    });
+    const { restaurants, unknownPrice } = await searchNearby(mockParams, 'k');
+    expect(restaurants[0].priceSource).toBe('google');
+    expect(restaurants[0].lat).toBeCloseTo(35.69);
+    expect(restaurants[0].lng).toBeCloseTo(139.70);
+    expect(unknownPrice[0].priceSource).toBeNull();
+  });
+});

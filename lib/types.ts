@@ -6,6 +6,9 @@ export interface Restaurant {
   address: string;
   mapsUrl: string;
   placeId: string;
+  lat: number;
+  lng: number;
+  priceSource: 'google' | 'hotpepper' | null;
 }
 
 export interface SearchResponse {
@@ -15,6 +18,7 @@ export interface SearchResponse {
     total: number;
     withPrice: number;
     coverage: number;
+    hotpepperOk: boolean;
   };
 }
 

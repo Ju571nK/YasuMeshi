@@ -50,6 +50,9 @@ function parsePlace(place: PlacesApiPlace, userLat: number, userLng: number): Re
     address: place.formattedAddress ?? '',
     mapsUrl: buildMapsUrl(place),
     placeId: place.id ?? '',
+    lat: placeLat,
+    lng: placeLng,
+    priceSource: priceRange ? 'google' : null,
   };
 }
 
