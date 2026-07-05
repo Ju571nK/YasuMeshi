@@ -62,11 +62,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    const googleKey = apiKey;
     const hpKey = process.env.HOTPEPPER_API_KEY;
 
     const [googleRes, hpRes] = await Promise.allSettled([
-      searchNearby(params, googleKey),
+      searchNearby(params, apiKey),
       hpKey
         ? searchHotPepper(params, hpKey, { timeoutMs: 2000 })
         : Promise.reject(new Error('HotPepper key not configured')),
@@ -82,7 +81,7 @@ export async function POST(request: Request) {
 
     const google = googleRes.value;
     const hotpepper = hpRes.status === 'fulfilled' ? hpRes.value : null;
-    const hotpepperOk = hpRes.status === 'fulfilled';
+    let hotpepperOk = hpRes.status === 'fulfilled';
 
     let merged: { restaurants: typeof google.restaurants; unknownPrice: typeof google.unknownPrice; total: number };
     try {
@@ -93,6 +92,7 @@ export async function POST(request: Request) {
         params.lng
       );
     } catch {
+      hotpepperOk = false;
       merged = {
         restaurants: google.restaurants,
         unknownPrice: google.unknownPrice,

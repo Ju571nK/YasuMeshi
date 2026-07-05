@@ -22,6 +22,7 @@ HotPepper Gourmet Search API(리크루트, 무료)는 가맹점에 대해 명시
 ### 알려진 트레이드오프 (의도적 감수)
 
 - Google `priceRange`(메뉴 가격대)와 HotPepper `budget`(1인 예산)은 **의미가 다르며 예산이 보통 2~3배 크다**. 같은 척도로 섞어 정렬하면 HotPepper로 채운 가게가 실제보다 비싸 보여 뒤로 밀릴 수 있다. MVP에서는 `priceSource` 배지로 투명하게 노출하고, analytics로 영향도를 실측한 뒤 후속 조정한다.
+- `meta.coverage`는 HotPepper로 가격이 채워진 가게 및 HotPepper 전용 가게를 포함한 **병합 후** 커버리지이므로, 프로토타입 단계의 "Google priceRange 순수 커버리지" 지표로 읽으면 안 된다.
 
 ## 아키텍처
 

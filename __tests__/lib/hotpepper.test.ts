@@ -12,14 +12,15 @@ describe('searchHotPepper', () => {
       ok: true,
       json: async () => ({
         results: { shop: [
-          { name: '牛丼 太郎', lat: '35.6900', lng: '139.7010', budget: { code: 'B010' }, address: '東京', urls: { pc: 'http://hp/1' } },
-          { name: 'No Budget', lat: '35.69', lng: '139.70', budget: {}, address: 'X', urls: { pc: 'http://hp/2' } },
+          { id: 'J0001', name: '牛丼 太郎', lat: '35.6900', lng: '139.7010', budget: { code: 'B010' }, address: '東京', urls: { pc: 'http://hp/1' } },
+          { id: 'J0002', name: 'No Budget', lat: '35.69', lng: '139.70', budget: {}, address: 'X', urls: { pc: 'http://hp/2' } },
         ] },
       }),
     });
     const shops = await searchHotPepper(params, 'k', { timeoutMs: 2000 });
     expect(shops).toHaveLength(2);
     expect(shops[0]).toMatchObject({ name: '牛丼 太郎', lat: 35.69, budget: { start: 501, end: 1000 } });
+    expect(shops[0].id).toBe('J0001');
     expect(shops[1].budget).toBeNull();
   });
 

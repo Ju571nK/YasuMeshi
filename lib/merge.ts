@@ -54,7 +54,7 @@ function hotpepperToRestaurant(shop: HotPepperShop, userLat: number, userLng: nu
     isOpen: true, // HotPepper 검색은 실시간 영업정보를 주지 않음 (알려진 한계)
     address: shop.address,
     mapsUrl: `https://www.google.com/maps/search/?api=1&query=${shop.lat},${shop.lng}`,
-    placeId: '',
+    placeId: shop.id ? `hp:${shop.id}` : '',
     lat: shop.lat,
     lng: shop.lng,
     priceSource: priceRange ? 'hotpepper' : null,
@@ -94,7 +94,7 @@ export function mergeResults(
             priceSource: 'hotpepper',
           };
         }
-        // Google 가격이 이미 있으면 유지 (dedup만).
+        // Google 가격이 이미 있으면 유지 (dedup만). 두 번째 HotPepper 매치는 의도적으로 무시 (50m 이내 동일 후보는 물리적으로 불가능하므로 중복 근사로 간주).
       } else {
         extras.push(hotpepperToRestaurant(shop, userLat, userLng));
       }

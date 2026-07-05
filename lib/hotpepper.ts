@@ -4,6 +4,7 @@ import type { SearchParams } from './types';
 const HOTPEPPER_URL = 'https://webservice.recruit.co.jp/hotpepper/gourmet/v1/';
 
 export interface HotPepperShop {
+  id: string;
   name: string;
   lat: number;
   lng: number;
@@ -13,6 +14,7 @@ export interface HotPepperShop {
 }
 
 interface RawShop {
+  id?: string;
   name?: string;
   lat?: string | number;
   lng?: string | number;
@@ -29,6 +31,7 @@ function radiusToRange(radius: number): number {
 
 function normalizeShop(s: RawShop): HotPepperShop {
   return {
+    id: s.id ?? '',
     name: s.name ?? '',
     lat: Number(s.lat),
     lng: Number(s.lng),

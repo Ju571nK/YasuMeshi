@@ -9,7 +9,7 @@ function g(over: Partial<Restaurant>): Restaurant {
   };
 }
 function shop(over: Partial<HotPepperShop>): HotPepperShop {
-  return { name: 'S', lat: 35.69, lng: 139.70, budget: { start: 501, end: 1000 }, address: 'A', url: '', ...over };
+  return { name: 'S', id: 'J0000', lat: 35.69, lng: 139.70, budget: { start: 501, end: 1000 }, address: 'A', url: '', ...over };
 }
 
 describe('normalizeName', () => {
@@ -52,10 +52,18 @@ describe('mergeResults', () => {
   });
 
   it('adds unmatched hotpepper shop as its own result', () => {
-    const r = mergeResults({ restaurants: [], unknownPrice: [] }, [shop({ name: 'Solo', lat: 35.69, lng: 139.70 })], 35.69, 139.70);
+    const r = mergeResults({ restaurants: [], unknownPrice: [] }, [shop({ name: 'Solo', id: 'J0000', lat: 35.69, lng: 139.70 })], 35.69, 139.70);
     expect(r.restaurants).toHaveLength(1);
     expect(r.restaurants[0].name).toBe('Solo');
     expect(r.restaurants[0].priceSource).toBe('hotpepper');
+    expect(r.restaurants[0].placeId).toBe('hp:J0000');
+  });
+
+  it('adds unmatched hotpepper shop without budget to unknownPrice', () => {
+    const r = mergeResults({ restaurants: [], unknownPrice: [] }, [shop({ name: 'NoBudget', budget: null })], 35.69, 139.70);
+    expect(r.restaurants).toHaveLength(0);
+    expect(r.unknownPrice).toHaveLength(1);
+    expect(r.unknownPrice[0].priceSource).toBeNull();
   });
 
   it('does not mutate caller input objects', () => {

@@ -152,6 +152,24 @@ describe('POST /api/search', () => {
     expect(data.restaurants[0].priceSource).toBe('hotpepper');
   });
 
+  it('reports hotpepperOk false when merge fails after successful fetch', async () => {
+    process.env.HOTPEPPER_API_KEY = 'hp-key';
+    const spy = jest.spyOn(require('@/lib/merge'), 'mergeResults').mockImplementation(() => { throw new Error('merge boom'); });
+    (global.fetch as jest.Mock).mockImplementation((input: unknown) => {
+      const u = String(input);
+      if (u.includes('googleapis')) {
+        return Promise.resolve({ ok: true, json: async () => ({ places: [ { displayName: { text: 'A' }, priceRange: { startPrice: { currencyCode: 'JPY', units: '500' } }, currentOpeningHours: { openNow: true }, location: { latitude: 35.69, longitude: 139.70 }, id: 'a' } ] }) });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({ results: { shop: [] } }) });
+    });
+    const res = await POST(makeRequest({ lat: 35.6896, lng: 139.7006 }));
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data.meta.hotpepperOk).toBe(false);
+    expect(data.restaurants).toHaveLength(1);
+    spy.mockRestore();
+  });
+
   it('falls back to google-only when hotpepper fails', async () => {
     process.env.HOTPEPPER_API_KEY = 'hp-key';
     (global.fetch as jest.Mock).mockImplementation((input: unknown) => {
