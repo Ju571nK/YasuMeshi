@@ -58,6 +58,15 @@ describe('mergeResults', () => {
     expect(r.restaurants[0].priceSource).toBe('hotpepper');
   });
 
+  it('does not mutate caller input objects', () => {
+    const unpriced = g({ name: '牛丼太郎', priceRange: null, priceSource: null, lat: 35.69, lng: 139.70 });
+    const input = { restaurants: [], unknownPrice: [unpriced] };
+    mergeResults(input, [shop({ name: '牛丼太郎', lat: 35.69, lng: 139.70 })], 35.69, 139.70);
+    expect(unpriced.priceRange).toBeNull();
+    expect(unpriced.priceSource).toBeNull();
+    expect(input.unknownPrice).toHaveLength(1);
+  });
+
   it('sorts merged results by price ascending', () => {
     const r = mergeResults(
       { restaurants: [g({ name: 'Expensive', priceRange: { start: 2000, end: 3000, currency: 'JPY' }, priceSource: 'google', lat: 35.60, lng: 139.60 })], unknownPrice: [] },

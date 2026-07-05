@@ -88,8 +88,11 @@ export function mergeResults(
       if (matchIdx >= 0) {
         const r = merged[matchIdx];
         if (r.priceRange == null && shop.budget != null) {
-          r.priceRange = { start: shop.budget.start, end: shop.budget.end, currency: 'JPY' };
-          r.priceSource = 'hotpepper';
+          merged[matchIdx] = {
+            ...r,
+            priceRange: { start: shop.budget.start, end: shop.budget.end, currency: 'JPY' },
+            priceSource: 'hotpepper',
+          };
         }
         // Google 가격이 이미 있으면 유지 (dedup만).
       } else {
