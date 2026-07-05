@@ -255,7 +255,13 @@ export function RestaurantCard({
 
         <div className="flex items-center gap-3 text-sm">
           {priceRange ? (
-            <span className="font-semibold text-orange-600">
+            <span className="font-semibold text-orange-600 flex items-center gap-1">
+              {restaurant.priceSource === 'hotpepper' && (
+                <span className="text-[10px] font-normal bg-gray-100 text-gray-500 px-1 py-0.5 rounded">予算</span>
+              )}
+              {restaurant.priceSource === 'google' && (
+                <span className="text-[10px] font-normal bg-gray-100 text-gray-500 px-1 py-0.5 rounded">価格</span>
+              )}
               ¥{priceRange.start.toLocaleString()}〜¥{priceRange.end.toLocaleString()}
             </span>
           ) : (
