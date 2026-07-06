@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Tech Stack
 
 - **Web**: Next.js + TypeScript + Vercel
-- **Data**: Google Places API (New) — sole data source for MVP
+- **Data**: Google Places API (New) — primary source; HotPepper Gourmet API — secondary source (price fill + result expansion)
 - **Ads**: AdMob (deferred to post-prototype)
 - **Analytics**: Firebase Analytics → BigQuery export
 - **Maps**: Google Maps deep links for navigation (no embedded map)
@@ -20,7 +20,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Key Architecture Decisions
 
-- **Google Places API is the only data source.** No HotPepper/Tabelog in MVP. No crowdsourcing. Google Maps ecosystem IS the crowdsourcing (data flywheel). In the prototype phase, restaurants without `priceRange` are shown in a separate "price unknown" section to measure coverage. In the final MVP, they will be silently filtered out.
+- **Hybrid data sources: Google Places primary, HotPepper secondary.** Google decides the result base. HotPepper Gourmet API (free) is called in parallel (2s timeout, `Promise.allSettled`) to fill missing prices from its `budget` field and add unmatched shops as new results. Dedup uses dual-signal matching: distance ≤50m AND normalized-name similarity ≥0.6 (`lib/merge.ts`). Any HotPepper failure/timeout falls back to Google-only (`meta.hotpepperOk`). Prices carry `priceSource: 'google' | 'hotpepper'` and render a 価格/予算 badge — the semantics differ (menu price vs per-person budget). No Tabelog (no public API). Google Maps ecosystem IS the crowdsourcing (data flywheel). Restaurants without any price go to a "price unknown" section to measure coverage — but note `meta.coverage` is post-merge coverage, not pure Google `priceRange` coverage. Design doc: `docs/superpowers/specs/2026-07-04-hotpepper-hybrid-design.md`.
+- **API keys are server-only.** `GOOGLE_PLACES_API_KEY` and `HOTPEPPER_API_KEY` live in `.env.local` (local) and Vercel environment variables (deploy). Never use a `NEXT_PUBLIC_` prefix for these; clients call only `/api/search`.
 - **Zero personal data storage.** No auth, no accounts, no server-side user data. Location is client-side only. Minimize operations overhead.
 - **Web-first, app later.** Validate with web (Next.js + Vercel), add native app only after web proves demand.
 - **Analytics events are designed for future data monetization** — all events must be anonymized (station/ward-level location only, no individual identification). Firebase events: `category_tap`, `walk_filter_select`, `shop_card_tap`, `map_navigate`, `session_time`.
